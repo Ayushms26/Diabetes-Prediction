@@ -1,0 +1,64 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, roc_auc_score
+import xgboost as xgb
+
+# Load the dataset (replace with your dataset path)
+df = pd.read_csv('diabetes_data.csv')
+
+# Select features and target variable
+X = df[['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']]
+y = df['Outcome']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Standardize the features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Initialize classifiers
+models = {
+    'Decision Tree': DecisionTreeClassifier(),
+    'Random Forest': RandomForestClassifier(),
+    'KNN': KNeighborsClassifier(),
+    'SVM': SVC(probability=True),
+    'XGBoost': xgb.XGBClassifier()
+}
+
+# Train and evaluate models
+best_model = None
+best_accuracy = 0
+best_auc = 0
+
+for name, model in models.items():
+    # Train the model
+    model.fit(X_train, y_train)
+    
+    # Make predictions
+    y_pred = model.predict(X_test)
+    y_pred_prob = model.predict_proba(X_test)[:, 1]
+    
+    # Calculate accuracy and AUC score
+    accuracy = accuracy_score(y_test, y_pred)
+    auc = roc_auc_score(y_test, y_pred_prob)
+    
+    print(f'{name} - Accuracy: {accuracy:.2f}, AUC: {auc:.2f}')
+    
+    # Keep track of the best model
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+        best_auc = auc
+        best_model = model
+
+# Display the best model results
+print(f'\nBest Model: {best_model.__class__.__name__}')
+print(f'Best Accuracy: {best_accuracy:.2f}')
+print(f'Best AUC: {best_auc:.2f}')
